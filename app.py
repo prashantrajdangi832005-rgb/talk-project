@@ -1,10 +1,12 @@
 import speech_recognition as sr
 import pyttsx3
+import webbrowser
 
 # Initialize text-to-speech engine
 engine = pyttsx3.init()
 engine.setProperty('rate', 150)  # Speed of speech
 engine.setProperty('voice', engine.getProperty('voices')[0].id)  # Change voice if needed
+
 
 def speak(text):
     print("Assistant:", text)
