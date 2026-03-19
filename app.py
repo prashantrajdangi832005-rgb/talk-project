@@ -1,86 +1,89 @@
 import speech_recognition as sr
 import pyttsx3
-import webbrowser
+from serpapi import GoogleSearch
 from datetime import datetime
-import sys
 
-# 1. Initialize Text-to-Speech Engine
+# --- CONFIGURATION ---
+SERP_API_KEY = "be875510650efbcae1c6c4ec70c972f502c871732d5302e8841fe7b16d3be46a" # <--- Put your key here
+
 engine = pyttsx3.init()
-engine.setProperty('rate', 170)  # Slightly faster, more natural speed
-voices = engine.getProperty('voices')
-# Index 0 is usually male, Index 1 is usually female (depends on OS)
-engine.setProperty('voice', voices[0].id) 
+engine.setProperty('rate', 175)
 
 def speak(text):
-    """Converts text to audio output"""
     print(f"Assistant: {text}")
     engine.say(text)
     engine.runAndWait()
 
-def listen(recognizer, source):
-    """Listens for audio and converts to text"""
-    print("🎙️ Listening...")
+def get_smart_answer(query):
+    """Uses SerpApi to get the actual direct answer from Google."""
+    params = {
+        "q": query,
+        "location": "india",
+        "hl": "en",
+        "gl": "hin",
+        "google_domain": "google.com",
+        "api_key": SERP_API_KEY
+    }
+    
     try:
-        # timeout: how long to wait for speech
-        # phrase_time_limit: max length of a sentence
-        audio = recognizer.listen(source, timeout=5, phrase_time_limit=5)
-        command = recognizer.recognize_google(audio)
-        print(f"You said: {command}")
-        return command.lower()
-    except sr.WaitTimeoutError:
-        return ""
-    except sr.UnknownValueError:
-        # Only triggers if it hears noise but no recognizable words
-        return ""
-    except sr.RequestError:
-        speak("I'm having trouble connecting to the internet.")
-        return ""
+        search = GoogleSearch(params)
+        results = search.get_dict()
+        
+        # 1. Try to find an "Answer Box" (Direct result)
+        if "answer_box" in results:
+            box = results["answer_box"]
+            if "answer" in box: return box["answer"]
+            if "snippet" in box: return box["snippet"]
+            
+        # 2. Try to find "Knowledge Graph" (Facts)
+        if "knowledge_graph" in results:
+            return results["knowledge_graph"].get("description")
+            
+        # 3. Fallback to the first organic snippet
+        if "organic_results" in results:
+            return results["organic_results"][0].get("snippet")
+            
+        return "I found some info, but no direct answer. Try rephrasing."
+    except Exception as e:
+        return "I had trouble reaching the search servers."
+
+def listen():
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("🎙️ Listening...")
+        try:
+            audio = recognizer.listen(source, timeout=5, phrase_time_limit=7)
+            command = recognizer.recognize_google(audio)
+            print(f"You said: {command}")
+            return command.lower()
+        except:
+            return ""
 
 def respond(command):
-    """Logic for processing commands"""
-    if "hello" in command:
-        speak("Hi there! How can I help you?")
+    # Standard commands
+    if "time" in command:
+        speak(f"It's {datetime.now().strftime('%I:%M %p')}")
+    
+    elif "exit" in command or "bye" in command:
+        speak("Goodbye!")
+        return False
 
-    elif "your name" in command:
-        speak("I am your Python assistant. You can call me Py-Bot.")
-
-    elif "time" in command:
-        now = datetime.now().strftime("%I:%M %p")
-        speak(f"The current time is {now}")
-
-    elif "search for" in command:
-        # Example: "search for space exploration"
-        query = command.replace("search for", "").strip()
-        speak(f"Searching Google for {query}")
-        webbrowser.open(f"https://www.google.com/search?q={query}")
-
-    elif "open" in command:
-        # Example: "open youtube"
-        site = command.replace("open", "").strip()
-        speak(f"Opening {site}")
-        webbrowser.open(f"https://www.{site}.com")
-
-    elif "exit" in command or "bye" in command or "stop" in command:
-        speak("Goodbye! Have a great day.")
-        return False # This signals the loop to stop
+    # Smart Search commands (Any question starting with 'who', 'what', 'where', 'how')
+    elif any(word in command for word in ["who", "what", "where", "how", "tell me"]):
+        speak("Let me check that for you...")
+        answer = get_smart_answer(command)
+        speak(answer)
     
     else:
-        speak("I didn't quite get that, but I'm still learning!")
+        speak("hey parth")
     
-    return True # Keep the loop running
+    return True
 
-# --- MAIN EXECUTION ---
 if __name__ == "__main__":
-    recognizer = sr.Recognizer()
-    
-    with sr.Microphone() as source:
-        speak("System online. Calibrating for background noise...")
-        # Calibrate once at start instead of every loop for speed
-        recognizer.adjust_for_ambient_noise(source, duration=1)
-        speak("I am ready for your commands.")
+    speak("Voice system active.")
+    running = True
+    while running:
+        user_input = listen()
+        if user_input:
+            running = respond(user_input)
 
-        running = True
-        while running:
-            user_input = listen(recognizer, source)
-            if user_input:
-                running = respond(user_input)
