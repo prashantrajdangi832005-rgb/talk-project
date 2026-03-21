@@ -4,7 +4,7 @@ from serpapi import GoogleSearch
 from datetime import datetime
 
 # --- CONFIGURATION ---
-SERP_API_KEY = "YOUR_SERPAPI_KEY_HERE" # <--- Put your key here
+SERP_API_KEY = "be875510650efbcae1c6c4ec70c972f502c871732d5302e8841fe7b16d3be46a" # <--- Put your key here
 
 engine = pyttsx3.init()
 engine.setProperty('rate', 175)
