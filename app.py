@@ -4,7 +4,7 @@ from serpapi import GoogleSearch
 from datetime import datetime
 
 # --- CONFIGURATION ---
-SERP_API_KEY = "be875510650efbcae1c6c4ec70c972f502c871732d5302e8841fe7b16d3be46a" # <--- Put your key here
+SERP_API_KEY = "YOUR_SERPAPI_KEY_HERE" # <--- Put your key here
 
 engine = pyttsx3.init()
 engine.setProperty('rate', 175)
@@ -18,9 +18,9 @@ def get_smart_answer(query):
     """Uses SerpApi to get the actual direct answer from Google."""
     params = {
         "q": query,
-        "location": "india",
+        "location": "United States",
         "hl": "en",
-        "gl": "hin",
+        "gl": "us",
         "google_domain": "google.com",
         "api_key": SERP_API_KEY
     }
@@ -75,7 +75,7 @@ def respond(command):
         speak(answer)
     
     else:
-        speak("hey parth")
+        speak("I'm listening. Ask me a question like 'Who is the president?'")
     
     return True
 
@@ -86,4 +86,3 @@ if __name__ == "__main__":
         user_input = listen()
         if user_input:
             running = respond(user_input)
-
